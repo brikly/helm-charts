@@ -1,0 +1,190 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "main.fullname" . }}
+  labels:
+    {{- include "main.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.strategy }}
+  strategy:
+    {{- toYaml .Values.strategy | nindent 4 }}
+  {{- end }}
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "main.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "main.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if .Values.secretManager.enabled }}
+      serviceAccountName: {{ .Values.secretManager.serviceAccount.name }}
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ include "main.fullname" . }}
+          {{- if .Values.securityContext }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.image.name }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            {{- if eq .Values.readinessProbe.type "http" }}
+            httpGet:
+              path: {{ .Values.readinessProbe.path }}
+              port: {{ .Values.readinessProbe.port | default (or (first .Values.service.ports).targetPort (first .Values.service.ports).port .Values.service.targetport .Values.service.port)  }}
+            {{- else if eq .Values.readinessProbe.type "tcp" }}
+            tcpSocket:
+              port: {{ .Values.readinessProbe.port | default (or (first .Values.service.ports).targetPort (first .Values.service.ports).port .Values.service.targetport .Values.service.port)  }}
+            {{- else if eq .Values.readinessProbe.type "exec" }}
+            exec:
+              command:
+                {{- range .Values.readinessProbe.command }}
+                - {{ . | quote }}
+                {{- end }}
+            {{- end }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            {{- if eq .Values.livenessProbe.type "http" }}
+            httpGet:
+              path: {{ .Values.livenessProbe.path }}
+              port: {{ .Values.livenessProbe.port | default (or (first .Values.service.ports).targetPort (first .Values.service.ports).port .Values.service.targetport .Values.service.port) }}
+            {{- else if eq .Values.livenessProbe.type "tcp" }}
+            tcpSocket:
+              port: {{ .Values.livenessProbe.port | default (or (first .Values.service.ports).targetPort (first .Values.service.ports).port .Values.service.targetport .Values.service.port) }}
+            {{- else if eq .Values.livenessProbe.type "exec" }}
+            exec:
+              command:
+                {{- range .Values.livenessProbe.command }}
+                - {{ . | quote }}
+                {{- end }}
+            {{- end }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.startupProbe.enabled }}
+          startupProbe:
+            {{- if eq .Values.startupProbe.type "http" }}
+            httpGet:
+              path: {{ .Values.startupProbe.path }}
+              port: {{ .Values.startupProbe.port | default (or (first .Values.service.ports).targetPort (first .Values.service.ports).port .Values.service.targetport .Values.service.port) }}
+            {{- else if eq .Values.startupProbe.type "tcp" }}
+            tcpSocket:
+              port: {{ .Values.startupProbe.port | default (or (first .Values.service.ports).targetPort (first .Values.service.ports).port .Values.service.targetport .Values.service.port) }}
+            {{- else if eq .Values.startupProbe.type "exec" }}
+            exec:
+              command:
+                {{- range .Values.startupProbe.command }}
+                - {{ . | quote }}
+                {{- end }}
+            {{- end }}
+            initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.startupProbe.failureThreshold }}
+            successThreshold: {{ .Values.startupProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.secretManager.cmd }}
+          command: ["/bin/sh", "-c"]
+          args: ["eval $(cat /etc/env/* | sed 's/^/export /') && {{ .Values.secretManager.cmd }}"]
+          {{- end }}
+          {{- if .Values.service.enabled }}
+          ports:
+            {{- if .Values.service.ports }}
+            {{- range .Values.service.ports }}
+            - containerPort: {{ .targetPort | default .port}}
+              {{- if .protocol }}
+              protocol: {{ .protocol }}
+              {{- else }}
+              protocol: TCP
+              {{- end }}
+            {{- end }}
+            {{- else }}
+            - containerPort: {{ .Values.service.targetport | default .Values.service.port }}
+              protocol: TCP
+            {{- end}}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.env }}
+          env:
+          {{- range $key, $value := .Values.env }}
+            - name: {{ $key | quote }}
+              value: {{ $value | quote }}
+          {{- end }}
+          {{- end }}
+          {{- with .Values.envFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if or .Values.volumeMounts .Values.secretManager.enabled  }}
+          volumeMounts:
+            {{- if .Values.volumeMounts }}
+            {{ range $k, $v := .Values.volumeMounts }}
+            - name: {{ $v.name | quote }}
+              mountPath: {{ $v.mountPath | quote }}
+            {{- end }}
+            {{- end }} 
+            {{- if .Values.secretManager.enabled  }}
+            - name: secrets
+              mountPath: "/etc/env"
+              readOnly: true
+            {{- end }}
+          {{- end }}
+      {{- if or .Values.volumes .Values.secretManager.enabled }}
+      volumes:
+        {{- if .Values.volumes }}
+        {{ range $k, $v := .Values.volumes }}
+        - name: {{ $v.name | quote }}
+          {{ if $v.secretRef }}
+          secret:
+            secretName: {{ $v.secretRef | quote }}   
+          {{- end }}   
+        {{- end }} 
+        {{- end }} 
+        {{- if .Values.secretManager.enabled }}
+        - name: secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ include "main.fullname" . }}
+        {{- end }}
+      {{- end }}  
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

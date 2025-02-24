@@ -1,0 +1,122 @@
+# Default values for main.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- Set details for deployment strategy
+strategy:
+
+replicaCount: 1
+
+image:
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  name: ""
+  tag: ""
+
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+secretManager:
+  enabled: false
+  serviceAccount:
+    name: ""
+    create: false
+  secrets: []
+  cmd: ""
+
+service:
+  enabled: false
+  type: ClusterIP
+  ports: []
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: ""
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+probe:
+  enabled: false
+  # -- List of targets
+  targets:
+  url: blackbox-exporter.monitoring.svc:9115
+  module: http_2xx
+  interval: 30s
+
+resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  requests:
+    cpu: 20m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+readinessProbe:
+  enabled: false
+  path: /
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 1
+  failureThreshold: 5
+  successThreshold: 1
+
+livenessProbe:
+  enabled: false
+  path: /
+  initialDelaySeconds: 5
+  periodSeconds: 3
+  timeoutSeconds: 1
+  failureThreshold: 5
+  successThreshold: 1
+
+startupProbe:
+  enabled: false
+  path: /
+  initialDelaySeconds: 5
+  periodSeconds: 3
+  timeoutSeconds: 1
+  failureThreshold: 5
+  successThreshold: 1
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+env: {}
+envFrom: {}
+
+volumeMounts: []
+volumes: []
