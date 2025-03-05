@@ -1,6 +1,6 @@
 # main
 
-![Version: 0.6.3](https://img.shields.io/badge/Version-0.6.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: latest](https://img.shields.io/badge/AppVersion-latest-informational?style=flat-square)
+![Version: 0.6.4](https://img.shields.io/badge/Version-0.6.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: latest](https://img.shields.io/badge/AppVersion-latest-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -71,6 +71,7 @@ A Helm chart for Kubernetes
 | service.enabled | bool | `false` |  |
 | service.ports | list | `[]` |  |
 | service.type | string | `"ClusterIP"` |  |
+| serviceAccount.name | string | `""` |  |
 | startupProbe.enabled | bool | `false` |  |
 | startupProbe.failureThreshold | int | `5` |  |
 | startupProbe.initialDelaySeconds | int | `5` |  |
