@@ -5,9 +5,6 @@ metadata:
   labels:
     {{- include "main.labels" . | nindent 4 }}
 spec:
-  {{- if .Values.serviceAccount.name }}
-  serviceAccountName: {{ .Values.serviceAccount.name }}
-  {{- end }}
   {{- if .Values.strategy }}
   strategy:
     {{- toYaml .Values.strategy | nindent 4 }}
@@ -27,6 +24,9 @@ spec:
       labels:
         {{- include "main.selectorLabels" . | nindent 8 }}
     spec:
+      {{- if .Values.serviceAccount.name }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- end }}
       {{- if .Values.secretManager.enabled }}
       serviceAccountName: {{ .Values.secretManager.serviceAccount.name }}
       {{- end }}
